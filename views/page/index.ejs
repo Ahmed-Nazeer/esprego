@@ -1,89 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
-<!-- Optional theme -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/css/bootstrap.min.css">
     <title>Database</title>
-    <style>
-        .table-frame{
-            display: flex;
-align-items: center;
-justify-content: center;
-        }
-  table{
-			width: 75%;
-			border-collapse: collapse;
-			text-align: center;
-		}
+<style>
+    
+	*{
+        
+        margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    letter-spacing: 0.3px;
+    }
+    body{
+        background: #8c82ae;
+    }
+    .productholder{
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;;
+    }
 
-		th,td{
-			padding: 10px 20px;
-			border:2px solid black;
-		}
-
-		th{
-			font-size: 20px;
-			font-weight: 500;
-			color: #fff;
-			background-color:rgb(35, 23, 35);
-            text-align: center;
-		}
-		td{
-			font-size: 15px;
-            font-weight: 500;
-            margin:0px 5px;
-            text-transform: capitalize;
-            
-		}
-
-		thead th{
-			padding:2px 1px;
-		}
-        .size{
-           width:100%;
-           height:100%;
-        }
-.temp{
-    width: 150px;
-    height:150px;
+.profilearea{
+    padding: 30px ;
 }
-    </style>
+.card{
+    box-shadow: 0 0 30px rgba(0, 0,0,0.5);
+    overflow: hidden;
+    border-radius: 15px;
+    background: white;
+    width: 300px;
+}
+.img{
+    height: 200px;
+    border-top-right-radius: 15px;
+    border-top-left-radius: 15px;
+    width: 100%;
+    background: #ddd9ec;
+}
+.img1 img{
+    position: relative;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    z-index: 1;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 7px solid #ffff;
+    margin-top: -80px;
+
+}
+.card:hover .img1 img{
+    border-color:  rgb(155, 89, 147);
+    transition: 0.7s;
+}
+.maintext{
+    padding: 10px 0;
+    text-align:  center;
+}
+.maintext h2{
+    text-align: center;
+    text-transform: capitalize;
+    font-weight: 700;
+    font-size: 20px;
+    margin:0 0 10px;
+    margin-top: -10px;
+}
+.maintext h4{
+    text-align: center;
+    text-transform: capitalize;
+    font-weight: 700;
+    font-size: 18px;
+    margin:0 0 10px;
+    margin-top: -10px;
+}
+.maintext h5{
+    color: #343338;
+    text-align: left;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 13px;
+    margin:0 0 10px;
+    margin-left: 80px;
+}
+.maintext p{
+    font-size: 16px;
+    padding: 0 30px;
+}
+</style>
 </head>
 <body>
-    <h1 class="text-center"><%= title %> </h1>
-    <div class="table-frame">
-    <table class="center">
-        <thead>
-            <th>Id</th>
-            <th>Image</th>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>Address</th>
-            <th>City</th>
-        </thead>
-        <tbody>
-            <%
-            if(data.length > 0)
-            {
-                data.forEach(function(data){
-            %>
-            <tr>
-                <td><%= data.customerID %></td>
-               <td class="temp" ><img class="size" src="<%=data.imgpath%>" alt=""></td>
-                <td ><%= data.FIRSTname %></td>
-                <td ><%= data.LASTName %></td>
-                <td ><%= data.Address %></td>
-                <td ><%= data.City %></td>
-            </tr>
-            <%
+  <div class="productholder">
+        <%if(data.length > 0){
+    
+        data.forEach(function(data){
+     %>
+   <div class="profilearea">
+                <div class="card">
+                    <div class="img"></div>
+                    <div class="img1"><img src="<%=data.imgpath%>" alt=""></div>
+                    <div class="maintext">
+                    <h2><%= data.customerID %></h2>
+                    <h4><%= data.FIRSTname %>&nbsp<%= data.LASTName %></h4>
+                    <h5><li><%= data.dept %></li></h5>
+                    <h5><li><%= data.Address %></li></h5>
+                    <h5><li><%= data.City %></li></h5>
+                </div>        
+            </div>
+    </div>
+    <%
                                 });
                             }
                             %>
-        </tbody>
-    </table>
-</div>
+  </div>
+   
 </body>
 </html>
