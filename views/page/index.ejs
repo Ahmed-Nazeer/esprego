@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/css/bootstrap.min.css">
-    <title>Database</title>
+    <title><%=title%></title>
 <style>
     
 	*{
@@ -32,7 +32,7 @@
     width: 300px;
 }
 .img{
-    height: 200px;
+    height: 150px;
     border-top-right-radius: 15px;
     border-top-left-radius: 15px;
     width: 100%;
@@ -44,8 +44,8 @@
     margin-left: auto;
     margin-right: auto;
     z-index: 1;
-    width: 140px;
-    height: 140px;
+    width: 160px;
+    height: 160px;
     border-radius: 50%;
     border: 7px solid #ffff;
     margin-top: -80px;
@@ -53,7 +53,7 @@
 }
 .card:hover .img1 img{
     border-color:  rgb(155, 89, 147);
-    transition: 0.7s;
+    transition: 0.9s;
 }
 .maintext{
     padding: 10px 0;
@@ -97,7 +97,7 @@
         data.forEach(function(data){
      %>
    <div class="profilearea">
-                <div class="card">
+                <div class="row card">
                     <div class="img"></div>
                     <div class="img1"><img src="<%=data.imgpath%>" alt=""></div>
                     <div class="maintext">

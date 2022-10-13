@@ -1,16 +1,4 @@
-// var express = require('express');
-// var app = express();
-// // set the view engine to ejs
-// app.set('view engine', 'ejs');
-// // use res.render to load up an ejs view file
-// // index page
-// app.get('/', function(req, res) {
-// //   // res.render('page/home');
-// //   res.sendFile('page/home');
-// });
 
-// app.listen(8080);
-// console.log('Server is listening on port 8080');
   
 
 const express=require('express')
@@ -50,10 +38,14 @@ app.get('/', (req, res) => {
     var query="select * from customer";
     connection.query(query,(err,row,fields)=>{
       if (err) throw err;
-      res.render('page/index',{title:'Customer Record', action:'list',data:row});
+      res.render('page/index',{title:'Record', action:'list',data:row});
     })
-    
   })
+
+  app.get('/form', (req, res) => {
+    res.render('page/send')
+  })
+
   app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
   })
