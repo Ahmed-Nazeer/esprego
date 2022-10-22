@@ -216,13 +216,14 @@ body
             data.forEach(function(data){
          %> 
          <div class="card">
-		<a href="/memberdetail/<%=data.workerid%>" class="card__container">
-			<div class="card__img" style="background-image: url(../images/<%=data.imgpath%>);"></div>
+		<a href="#" class="card__container">
+			<div class="card__img" style="background-image: url(../images/<%=data.prodimg%>);"></div>
 		</a>
 		<div class="card__info">
-			<span class="card__category"><%=data.workerfname%>&nbsp<%=data.wrokerlname%></span>
-			<h3 class="card__title"><%=data.workerpos%></h3>
-			<span class="card__by"><%=data.workerid%></span>
+			<span class="card__category"><%=data.prodname%></span>
+			<span class="card__category"><%=data.prodbrandname%></span>
+			<h3 class="card__title"><%=data.prodinstock%></h3>
+			<span class="card__by"><%=data.proddesc%></span>
 		</div>
 	</div>
     <%
@@ -230,5 +231,6 @@ body
                             }
                             %>
 </div>
+
 </body>
 </html>

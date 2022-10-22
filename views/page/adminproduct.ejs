@@ -413,18 +413,18 @@ nav.close ~ .dashboard .top{
    %> 
    <div class="contener">
             <div class="image-contener">
-                <img src="../images/<%=data.imgpath%>" alt="">
+                <img src="../images/<%=data.prodimg%>" alt="">
             </div>
             <div class="meta-contener">
-                <h2 class="title"><%=data.workerfname%> <%=data.wrokerlname%></h2>
-                <span class="desc"><b>EMAIL :</b><%=data.email%></span>
-                <span class="desc"><b>ID :</b><%=data.workerid%></span>
+                <h2 class="title"><%=data.prodname%></h2>
+                <span class="desc"><b>In Stock :</b><%=data.prodinstock%></span>
+                <span class="desc"><b>Brand Name :</b><%=data.prodbrandname%></span>
             </div>
             <div class="button-contener">
-                <a href="/admin/team/update?id=<%= data.workerid %>" class="button">Update →</a>
+                <a href="/admin/product/update?id=<%=data.prodid %>" class="button">Update →</a>
             </div>
             <div class="button-contener">
-                <a href="/admin/team/delete/<%= data.workerid %>" class="button">Delete →</a>
+                <a href="/admin/product/delete/<%= data.prodid %>" class="button">Delete →</a>
             </div>
         </div>
     <%

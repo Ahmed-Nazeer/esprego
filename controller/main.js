@@ -1,9 +1,12 @@
 const mysql = require('mysql'); 
 const bodyparser=require('body-parser');
+const pdf =require("html-pdf");
+const fs=require("fs");
 //data base connection
 var connection=mysql.createConnection({
 host:'localhost',
 user:'root',
+port:'3306',
 password:'',
 database:'webproject'
 });
@@ -31,13 +34,29 @@ exports.getcustomer = (req, res) => {
     })
 };
 
+const cardperpage=6;
 //displaying teams page
 exports.getteam = (req, res)=>{
+  let options = { format: 'A4' };
+  var selectedpage=req.query.id;
     var query="select * from teamdetails";
     connection.query(query,(err,row,fields)=>{
       if (err) throw err;
       res.render('page/ourteam',{action:'list',data:row});
     })
+    //for the documentation of each page
+    // function (err,html){
+    //   pdf
+    //   .create(html,options)
+    //   .toFile("../views/page/temp.pdf",function(err,result){
+    //     if(err) return console.log(err);
+    //     else{
+    //       var allteams=fs.readFileSync("../views/page/temp.pdf");
+    //       res.header("content-type","application.pdf");
+
+    //     }
+    //   })
+    // }
     }
 
 //displaying form for adding new team member
@@ -73,4 +92,168 @@ exports.getteamadmin = (req, res)=>{
     if (err) throw err;
     res.render('page/adminteam',{action:'list',data:row});
   })
+  }
+//   //displaying form to update  team member
+// exports.teamadd= (req, res) => {
+//   res.render('page/updateteam');
+// };
+
+//showing team member data in form
+exports.updateteam = (req, res) => {
+  
+  var id=req.query.id;
+  var tempquery="SELECT * FROM `teamdetails` WHERE `workerid` = ?";
+  connection.query(tempquery,[id],(err, row) => {
+      if (!err) {
+        res.render("page/updateteam",{data:row})
+      } else console.log(err);
+    }
+  );
+};
+
+//updating team member data in form
+exports.updateteampost=(req,res)=>{
+  if(req.file){
+    var fname=req.body.firstname;
+var lname=req.body.lastname;
+var email=req.body.email;
+var cnic=req.body.cnic;
+var pos=req.body.pos;
+var img=req.file.originalname;
+var idd=req.body.updateid;
+var query="update teamdetails set workerfname=?,wrokerlname=?,email=?,cnic=?,workerpos=?,imgpath=? where workerid=?";
+var data=[fname,lname,email,cnic,pos,img,idd];
+  }
+  else{
+var fname=req.body.firstname;
+var lname=req.body.lastname;
+var email=req.body.email;
+var cnic=req.body.cnic;
+var pos=req.body.pos;
+var idd=req.body.updateid;
+var query="update teamdetails set workerfname=?,wrokerlname=?,email=?,cnic=?,workerpos=? where workerid=?";
+var data=[fname,lname,email,cnic,pos,idd];
+  }
+
+connection.query(query,data,(err)=>{
+  if(!err){
+    res.redirect("/admin/team");
+  }
+  console.log("error in update");
+})
+
+};
+
+
+//del team member data
+exports.delteam = (req, res) => {
+  var tempquery="DELETE FROM `teamdetails` WHERE `workerid` = " + req.params.id;
+  connection.query(tempquery,(err, row, fields) => {
+      if (!err) {
+          res.redirect("/admin/team");
+      } else console.log(err);
+    }
+  );
+};
+
+exports.getproductadmin = (req, res)=>{
+  var query="select * from productdetails";
+  connection.query(query,(err,row,fields)=>{
+    if (err) throw err;
+    res.render('page/adminproduct',{action:'list',data:row});
+  })
+  }
+
+  //del product data
+exports.delproduct = (req, res) => {
+  var tempquery="DELETE FROM `productdetails` WHERE `prodid` = " + req.params.id;
+  connection.query(tempquery,(err, row, fields) => {
+      if (!err) {
+          res.redirect("/admin/product");
+      } else console.log(err);
+    }
+  );
+};
+
+//displaying form for adding new product
+exports.productadd= (req, res) => {
+  res.render('page/addproduct');
+};
+
+//adding new product
+exports.addproduct= (req, res) => {
+  var pname=req.body.prodname;
+    var bname=req.body.brandname;
+    var quan=req.body.quantity;
+    var desc=req.body.desc;
+    var img=req.file.originalname;
+      var addingdataquery="INSERT INTO productdetails(prodname,prodbrandname,prodinstock,proddesc,prodimg) VALUES ('"+pname+"','"+bname+"','"+quan+"','"+desc+"','"+img+"')";
+      connection.query(addingdataquery,(err)=>{
+        if (err) throw err;
+        res.redirect("/admin/product");
+      })
+};
+
+
+//showing product data in form
+exports.updateproduct = (req, res) => {
+  var id=req.query.id;
+  var tempquery="SELECT * FROM `productdetails` WHERE `prodid` = ?";
+  connection.query(tempquery,[id],(err, row) => {
+      if (!err) {
+        res.render("page/updateproduct",{data:row})
+      } else console.log(err);
+    }
+  );
+};
+
+//updating product data in form
+exports.updateproductpost=(req,res)=>{
+  if(req.file){
+    var id=req.body.id;
+    var pname=req.body.prodname;
+    var bname=req.body.brandname;
+    var quan=req.body.quantity;
+    var desc=req.body.desc;
+    var img=req.file.originalname;
+var query="update productdetails set prodname=?,prodbrandname=?,prodinstock=?,proddesc=?,prodimg=? where prodid=?";
+var data=[pname,bname,quan,desc,img,id];
+  }
+  else{
+    var id=req.body.id;
+    var pname=req.body.prodname;
+    var bname=req.body.brandname;
+    var quan=req.body.quantity;
+    var desc=req.body.desc;
+    var query="update productdetails set prodname=?,prodbrandname=?,prodinstock=?,proddesc=? where prodid=?";
+    var data=[pname,bname,quan,desc,id];
+  }
+
+connection.query(query,data,(err)=>{
+  if(!err){
+    res.redirect("/admin/product");
+  }
+  else{
+  console.log("error in update");
+  }
+})
+
+};
+
+//displaying product page
+exports.getproduct = (req, res)=>{
+  var query="select * from productdetails";
+  connection.query(query,(err,row,fields)=>{
+    if (err) throw err;
+    res.render('page/ourproduct',{action:'list',data:row});
+  })
+  }
+  exports.memberdetail=(req,res)=>{
+    var tempquery="SELECT * FROM `teamdetails` WHERE `workerid` = " + req.params.id;
+    connection.query(tempquery,(err, row, fields) => {
+        if (!err) {
+            res.render("page/memberdetails",{data:row,title:"workerdetails"});
+        } else console.log(err);
+      }
+    );
   }
