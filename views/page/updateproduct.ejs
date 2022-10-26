@@ -478,6 +478,14 @@ form .input-custom{
                 <input type="text" placeholder="Enter Description" required name="desc" 
                 value="<%=data[0].proddesc%>">
               </div>
+              <div class="input-box">
+                <span class="details">Price</span>
+                <input type="number" placeholder="Enter Price" required name="price" value="<%=data[0].prodprice%>">
+              </div>
+              <div class="input-box">
+                <span class="details">Warranty up to </span>
+                <input type="number" placeholder="Enter Warranty" required name="wrant" value="<%=data[0].prodwrant%>">
+              </div>
               <div class="input-box1">
                 <span class="input-custom">Image</span>
                 <input type="file" class="image"  name="image" value="<%=data[0].prod%>"> 

@@ -1,12 +1,13 @@
 const mysql = require('mysql'); 
+
 const bodyparser=require('body-parser');
 const pdf =require("html-pdf");
 const fs=require("fs");
+const { request } = require('http');
 //data base connection
 var connection=mysql.createConnection({
 host:'localhost',
 user:'root',
-port:'3306',
 password:'',
 database:'webproject'
 });
@@ -34,35 +35,59 @@ exports.getcustomer = (req, res) => {
     })
 };
 
-const cardperpage=6;
 //displaying teams page
 exports.getteam = (req, res)=>{
-  let options = { format: 'A4' };
-  var selectedpage=req.query.id;
-    var query="select * from teamdetails";
-    connection.query(query,(err,row,fields)=>{
-      if (err) throw err;
-      res.render('page/ourteam',{action:'list',data:row});
-    })
-    //for the documentation of each page
-    // function (err,html){
-    //   pdf
-    //   .create(html,options)
-    //   .toFile("../views/page/temp.pdf",function(err,result){
-    //     if(err) return console.log(err);
-    //     else{
-    //       var allteams=fs.readFileSync("../views/page/temp.pdf");
-    //       res.header("content-type","application.pdf");
-
-    //     }
-    //   })
-    // }
+    const resultsPerPage = 9;
+  let sql = 'SELECT * FROM teamdetails';
+  connection.query(sql, (err, result) => {
+      if(err) throw err;
+      const numOfResults = result.length;
+      const numberOfPages = Math.ceil(numOfResults / resultsPerPage);
+      let page = req.query.page ? Number(req.query.page) : 1;
+      if(page > numberOfPages){
+          res.redirect('/?page='+encodeURIComponent(numberOfPages));
+      }
+      //Determine the SQL LIMIT starting number
+      const startingLimit = (page - 1) * resultsPerPage;
+      //Get the relevant number of POSTS for this starting page
+      sql = `SELECT * FROM teamdetails LIMIT ${startingLimit},${resultsPerPage}`;
+      connection.query(sql, (err, result)=>{
+          if(err) throw err;
+          let iterator = (page - 1) < 1 ? 1 : page - 1;
+          let endingLink = (iterator + 3) <= numberOfPages ? (iterator + 3) : page + (numberOfPages - page);
+          if(endingLink < (page + 0)){
+              iterator -= (page + 0) - numberOfPages;
+          }
+      
+          res.render('page/ourteam', {data: result, page, iterator, endingLink, numberOfPages});
+      });
+  });
     }
+
+//displaying teams after search
+exports.getsearchteam = (req, res)=>{
+  it=0;
+    var min=0;
+    var year=req.query.year;
+    var sname=req.query.sname;
+    var sql=`SELECT * FROM teamdetails where  workerfname LIKE '%${sname}%' and workerexperience BETWEEN '${min}' and '${year}'`;
+    connection.query(sql,(err,result)=>{
+      if (err) throw err
+      if( result.length > 0){
+        res.render('page/oursearchteam',{data:result,it})
+      }
+      it=100;
+ res.render('page/oursearchteam',{data:result,it})
+    }) 
+}
+
 
 //displaying form for adding new team member
 exports.teamadd= (req, res) => {
       res.render('page/addteam');
 };
+
+
 
 //adding new team member
 exports.addteam = (req, res) => {
@@ -79,8 +104,14 @@ exports.addteam = (req, res) => {
       var email1=req.body.email;
       var cnic1=req.body.cnic;
       var pos1=req.body.pos;
+      var deg=req.body.deg;
+      var phn=req.body.phn;
+      var exp=req.body.exp;
+      var level=req.body.level;
+      var desc=req.body.desc;
+      var fax=req.body.fax;
       var img=req.file.originalname;
-        var addingdataquery="INSERT INTO teamdetails(workerfname,wrokerlname,workerpos,email,cnic,imgpath) VALUES ('"+fname+"','"+lname+"','"+pos1+"','"+email1+"','"+cnic1+"','"+img+"')";
+        var addingdataquery="INSERT INTO teamdetails(workerfname,wrokerlname,workerpos,email,cnic,imgpath,workerdegree,workerphone,workerexperience,workercareerlevel,workerdesc,workerfax) VALUES ('"+fname+"','"+lname+"','"+pos1+"','"+email1+"','"+cnic1+"','"+img+"','"+deg+"','"+phn+"','"+exp+"','"+level+"','"+desc+"','"+fax+"')";
         connection.query(addingdataquery,(err)=>{
           if (err) throw err;
           res.redirect("/admin/team");
@@ -92,7 +123,8 @@ exports.getteamadmin = (req, res)=>{
     if (err) throw err;
     res.render('page/adminteam',{action:'list',data:row});
   })
-  }
+
+}
 //   //displaying form to update  team member
 // exports.teamadd= (req, res) => {
 //   res.render('page/updateteam');
@@ -121,8 +153,14 @@ var cnic=req.body.cnic;
 var pos=req.body.pos;
 var img=req.file.originalname;
 var idd=req.body.updateid;
-var query="update teamdetails set workerfname=?,wrokerlname=?,email=?,cnic=?,workerpos=?,imgpath=? where workerid=?";
-var data=[fname,lname,email,cnic,pos,img,idd];
+var deg=req.body.deg;
+var phn=req.body.phn;
+var exp=req.body.exp;
+var level=req.body.level;
+var desc=req.body.desc;
+var fax=req.body.fax;
+var query="update teamdetails set workerfname=?,wrokerlname=?,email=?,cnic=?,workerpos=?,imgpath=?,workerdegree=?,workerphone=?,workerexperience=?,workercareerlevel=?,workerdesc=?,workerfax=? where workerid=?";
+var data=[fname,lname,email,cnic,pos,img,deg,phn,exp,level,desc,fax,idd];
   }
   else{
 var fname=req.body.firstname;
@@ -131,8 +169,14 @@ var email=req.body.email;
 var cnic=req.body.cnic;
 var pos=req.body.pos;
 var idd=req.body.updateid;
-var query="update teamdetails set workerfname=?,wrokerlname=?,email=?,cnic=?,workerpos=? where workerid=?";
-var data=[fname,lname,email,cnic,pos,idd];
+var deg=req.body.deg;
+var phn=req.body.phn;
+var exp=req.body.exp;
+var level=req.body.level;
+var desc=req.body.desc;
+var fax=req.body.fax;
+var query="update teamdetails set workerfname=?,wrokerlname=?,email=?,cnic=?,workerpos=?,workerdegree=?,workerphone=?,workerexperience=?,workercareerlevel=?,workerdesc=?,workerfax=? where workerid=?";
+var data=[fname,lname,email,cnic,pos,deg,phn,exp,level,desc,fax,idd];
   }
 
 connection.query(query,data,(err)=>{
@@ -186,8 +230,10 @@ exports.addproduct= (req, res) => {
     var bname=req.body.brandname;
     var quan=req.body.quantity;
     var desc=req.body.desc;
+    var price=req.body.price;
+    var wrant=req.body.wrant;
     var img=req.file.originalname;
-      var addingdataquery="INSERT INTO productdetails(prodname,prodbrandname,prodinstock,proddesc,prodimg) VALUES ('"+pname+"','"+bname+"','"+quan+"','"+desc+"','"+img+"')";
+      var addingdataquery="INSERT INTO productdetails(prodname,prodbrandname,prodinstock,proddesc,prodimg,prodprice,prodwrant) VALUES ('"+pname+"','"+bname+"','"+quan+"','"+desc+"','"+img+"','"+price+"','"+wrant+"')";
       connection.query(addingdataquery,(err)=>{
         if (err) throw err;
         res.redirect("/admin/product");
@@ -215,9 +261,11 @@ exports.updateproductpost=(req,res)=>{
     var bname=req.body.brandname;
     var quan=req.body.quantity;
     var desc=req.body.desc;
+    var price=req.body.price;
+    var wrant=req.body.wrant;
     var img=req.file.originalname;
-var query="update productdetails set prodname=?,prodbrandname=?,prodinstock=?,proddesc=?,prodimg=? where prodid=?";
-var data=[pname,bname,quan,desc,img,id];
+var query="update productdetails set prodname=?,prodbrandname=?,prodinstock=?,proddesc=?,prodimg=?,prodprice=?,prodwrant=? where prodid=?";
+var data=[pname,bname,quan,desc,img,price,wrant,id];
   }
   else{
     var id=req.body.id;
@@ -225,8 +273,10 @@ var data=[pname,bname,quan,desc,img,id];
     var bname=req.body.brandname;
     var quan=req.body.quantity;
     var desc=req.body.desc;
-    var query="update productdetails set prodname=?,prodbrandname=?,prodinstock=?,proddesc=? where prodid=?";
-    var data=[pname,bname,quan,desc,id];
+    var price=req.body.price;
+    var wrant=req.body.wrant;
+var query="update productdetails set prodname=?,prodbrandname=?,prodinstock=?,proddesc=?,prodprice=?,prodwrant=? where prodid=?";
+var data=[pname,bname,quan,desc,price,wrant,id];
   }
 
 connection.query(query,data,(err)=>{
@@ -242,18 +292,84 @@ connection.query(query,data,(err)=>{
 
 //displaying product page
 exports.getproduct = (req, res)=>{
-  var query="select * from productdetails";
-  connection.query(query,(err,row,fields)=>{
-    if (err) throw err;
-    res.render('page/ourproduct',{action:'list',data:row});
-  })
-  }
-  exports.memberdetail=(req,res)=>{
-    var tempquery="SELECT * FROM `teamdetails` WHERE `workerid` = " + req.params.id;
-    connection.query(tempquery,(err, row, fields) => {
-        if (!err) {
-            res.render("page/memberdetails",{data:row,title:"workerdetails"});
-        } else console.log(err);
+  const resultsPerPage = 9;
+  let sql = 'SELECT * FROM productdetails';
+  connection.query(sql, (err, result) => {
+      if(err) throw err;
+      const numOfResults = result.length;
+      const numberOfPages = Math.ceil(numOfResults / resultsPerPage);
+      let page = req.query.page ? Number(req.query.page) : 1;
+      if(page > numberOfPages){
+          res.redirect('/?page='+encodeURIComponent(numberOfPages));
       }
-    );
+      //Determine the SQL LIMIT starting number
+      const startingLimit = (page - 1) * resultsPerPage;
+      //Get the relevant number of POSTS for this starting page
+      sql = `SELECT * FROM productdetails LIMIT ${startingLimit},${resultsPerPage}`;
+      connection.query(sql, (err, result)=>{
+          if(err) throw err;
+          let iterator = (page - 1) < 1 ? 1 : page - 1;
+          let endingLink = (iterator + 3) <= numberOfPages ? (iterator + 3) : page + (numberOfPages - page);
+          if(endingLink < (page + 0)){
+              iterator -= (page + 0) - numberOfPages;
+          }
+      
+          res.render('page/ourproduct', {data: result, page, iterator, endingLink, numberOfPages});
+      });
+  });
+    
+  }
+
+//   displaying teams after search
+// exports.searchproduct = (req, res)=>{
+//   var it=0;
+//     var pname=req.query.pname;
+//     var sql="SELECT * FROM productdetails where prodname LIKE '%"+pname+"%'";
+//     connection.query(sql,(err,result)=>{
+//       if (err) throw err
+//       if( result.length > 0){
+//         res.render('page/oursearchproduct',{data:result,it})
+//       }
+//       it=100;
+//  res.render('page/oursearchproduct',{data:result,it})
+//     })
+// }
+
+exports.filterproduct = (req, res)=>{
+  it=0;
+    var min=req.query.min;
+    var max=req.query.max;
+    var pname=req.query.pname;
+    console.log(min,max);
+    var sql=`SELECT * FROM productdetails where  prodname LIKE '%${pname}%' and prodprice BETWEEN '${min}' and '${max}'`;
+    connection.query(sql,(err,result)=>{
+      if (err) throw err
+      if( result.length > 0){
+        res.render('page/oursearchproduct',{data:result,it})
+      }
+      it=100;
+ res.render('page/oursearchproduct',{data:result,it})
+    })
+}
+
+
+exports.getteamdetail = (req, res)=>{
+  var tempquery="SELECT  * FROM `teamdetails` WHERE `workerid` = " + req.params.id;
+  connection.query(tempquery,(err, row, fields) => {
+      if (!err) {
+          res.render("page/memberdetails",{data:row});
+      } else console.log(err);
+    }
+  );
+  }
+
+
+exports.getproductdetail = (req, res)=>{
+  var tempquery="SELECT  * FROM `productdetails` WHERE `prodid` = " + req.params.id;
+  connection.query(tempquery,(err, row, fields) => {
+      if (!err) {
+          res.render("page/productdetails",{data:row});
+      } else console.log(err);
+    }
+  );
   }

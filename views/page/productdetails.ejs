@@ -265,20 +265,20 @@ p {
   <section id="hero">
     <div class="container">
       <div class="left">
-        <p class="subheading">I'm <%=data[0].workerfname%> <%=data[0].workerlname%></p>
+        <p class="subheading"><%=data[0].prodname%> By <%=data[0].prodbrandname%></p>
         <h2 class="heading">
-          <div class="wrapper"><span>Experience: <%=data[0].workerexperience%></span></div>
-          <div class="wrapper"><span>Career Level: <%=data[0].workercareerlevel%></span></div>
+          <div class="wrapper"><span>Warranty: <%=data[0].prodwrant%> Year</span></div>
+          <div class="wrapper"><span>$<%=data[0].prodprice%></span></div>
         </h2>
-        <p class="desc"><%=data[0].workerdesc%></p>
+        <p class="desc"><%=data[0].proddesc%></p>
         <div class="buttons">
-          <a href="/team" class="primary-btn">Go Back</a>
+          <a href="/product" class="primary-btn">Go Back</a>
         </div>
       </div>
       <div class="right">
-        <img src="../images/<%=data[0].imgpath%>" alt="">
+        <img src="../images/<%=data[0].prodimg%>" alt="">
       </div>
-    </div>
+      </div>
   </section>
   <script>
 
