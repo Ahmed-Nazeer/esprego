@@ -58,7 +58,6 @@ exports.getteam = (req, res)=>{
           if(endingLink < (page + 0)){
               iterator -= (page + 0) - numberOfPages;
           }
-      
           res.render('page/ourteam', {data: result, page, iterator, endingLink, numberOfPages});
       });
   });

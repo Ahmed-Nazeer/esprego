@@ -39,3 +39,7 @@ router.get("/searchproduct", (req, res) => main.filterproduct(req, res));
 router.get("/teamdetail/:id", (req, res) => main.getteamdetail(req, res));
 router.get("/productdetail/:id", (req, res) => main.getproductdetail(req, res));
 module.exports = router;
+
+//similar routes
+//file structure same, only include 'api' in header
+
