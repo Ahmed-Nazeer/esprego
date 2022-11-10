@@ -1,4 +1,3 @@
-
 const express=require('express')
 const path=require("path")
 const mysql = require('mysql'); 
@@ -38,6 +37,16 @@ router.get("/product", (req, res) => main.getproduct(req, res));
 router.get("/searchproduct", (req, res) => main.filterproduct(req, res));
 router.get("/teamdetail/:id", (req, res) => main.getteamdetail(req, res));
 router.get("/productdetail/:id", (req, res) => main.getproductdetail(req, res));
+router.get("/account", (req, res) => main.getaccpage(req, res));
+router.post("/account", (req, res) => main.login(req, res));
+router.post("/register",async(req, res) => main.register(req, res));
+router.get("/user", (req, res) => main.loggedin(req,res));
+router.get("/signout", (req, res) => main.signout(req,res));
+router.get("/adminsignout", (req, res) => main.adminsignout(req,res));
+router.get("/admin/user", (req, res) => main.getuseradmin(req, res));
+router.get("/admin/user/update", (req, res) => main.updateuser(req, res));
+router.post("/admin/user/update", (req, res) => main.updateuserpost(req, res));
+router.get("/admin/user/delete/:id", (req, res) => main.deluser(req, res));
 module.exports = router;
 
 //similar routes

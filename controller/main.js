@@ -1,9 +1,11 @@
 const mysql = require('mysql'); 
-
+const bcrypt = require("bcrypt") 
 const bodyparser=require('body-parser');
 const pdf =require("html-pdf");
 const fs=require("fs");
 const { request } = require('http');
+const e = require('connect-flash');
+const session = require('express-session');
 //data base connection
 var connection=mysql.createConnection({
 host:'localhost',
@@ -83,7 +85,12 @@ exports.getsearchteam = (req, res)=>{
 
 //displaying form for adding new team member
 exports.teamadd= (req, res) => {
+  if(req.session.role=="admin"){
       res.render('page/addteam');
+  }
+  else{
+    res.redirect('/home');
+  }
 };
 
 
@@ -98,6 +105,7 @@ exports.addteam = (req, res) => {
     //   } else {
     //     console.log("file received");
     //   }
+    if(req.session.role=="admin"){
     var fname=req.body.firstname;
       var lname=req.body.lastname;
       var email1=req.body.email;
@@ -115,13 +123,22 @@ exports.addteam = (req, res) => {
           if (err) throw err;
           res.redirect("/admin/team");
         })
+      }
+      else{
+        res.redirect('/home')
+      }
 };
 exports.getteamadmin = (req, res)=>{
+  if(req.session.role=="admin"){
   var query="select * from teamdetails";
   connection.query(query,(err,row,fields)=>{
     if (err) throw err;
     res.render('page/adminteam',{action:'list',data:row});
   })
+}
+else{
+  res.redirect('/home')
+}
 
 }
 //   //displaying form to update  team member
@@ -131,7 +148,7 @@ exports.getteamadmin = (req, res)=>{
 
 //showing team member data in form
 exports.updateteam = (req, res) => {
-  
+  if(req.session.role=="admin"){
   var id=req.query.id;
   var tempquery="SELECT * FROM `teamdetails` WHERE `workerid` = ?";
   connection.query(tempquery,[id],(err, row) => {
@@ -140,10 +157,16 @@ exports.updateteam = (req, res) => {
       } else console.log(err);
     }
   );
+  }
+  else{
+    res.redirect('/home')
+  }
 };
 
 //updating team member data in form
 exports.updateteampost=(req,res)=>{
+  if(req.session.role=="admin"){
+
   if(req.file){
     var fname=req.body.firstname;
 var lname=req.body.lastname;
@@ -184,12 +207,17 @@ connection.query(query,data,(err)=>{
   }
   console.log("error in update");
 })
+  }
+  else{
+    res.redirect('/home')
+  }
 
 };
 
 
 //del team member data
 exports.delteam = (req, res) => {
+  if(req.session.role=="admin"){
   var tempquery="DELETE FROM `teamdetails` WHERE `workerid` = " + req.params.id;
   connection.query(tempquery,(err, row, fields) => {
       if (!err) {
@@ -197,18 +225,28 @@ exports.delteam = (req, res) => {
       } else console.log(err);
     }
   );
+  }
+  else{
+    res.redirect('/home')
+  }
 };
 
 exports.getproductadmin = (req, res)=>{
+  if(req.session.role=="admin"){
   var query="select * from productdetails";
   connection.query(query,(err,row,fields)=>{
     if (err) throw err;
     res.render('page/adminproduct',{action:'list',data:row});
   })
+}
+else{
+  res.redirect('/home')
+}
   }
 
   //del product data
 exports.delproduct = (req, res) => {
+  if(req.session.role=="admin"){
   var tempquery="DELETE FROM `productdetails` WHERE `prodid` = " + req.params.id;
   connection.query(tempquery,(err, row, fields) => {
       if (!err) {
@@ -216,15 +254,26 @@ exports.delproduct = (req, res) => {
       } else console.log(err);
     }
   );
+  }
+  else{
+    res.redirect('/home')
+  }
 };
 
 //displaying form for adding new product
 exports.productadd= (req, res) => {
+  if(req.session.role=="admin"){
+
   res.render('page/addproduct');
+  }
+  else{
+    res.redirect('/home')
+  }
 };
 
 //adding new product
 exports.addproduct= (req, res) => {
+  if(req.session.role=="admin"){
   var pname=req.body.prodname;
     var bname=req.body.brandname;
     var quan=req.body.quantity;
@@ -237,11 +286,16 @@ exports.addproduct= (req, res) => {
         if (err) throw err;
         res.redirect("/admin/product");
       })
+    }
+    else{
+      res.redirect('/home')
+    }
 };
 
 
 //showing product data in form
 exports.updateproduct = (req, res) => {
+  if(req.session.role=="admin"){
   var id=req.query.id;
   var tempquery="SELECT * FROM `productdetails` WHERE `prodid` = ?";
   connection.query(tempquery,[id],(err, row) => {
@@ -250,10 +304,15 @@ exports.updateproduct = (req, res) => {
       } else console.log(err);
     }
   );
+  }
+  else{
+    res.redirect('/home')
+  }
 };
 
 //updating product data in form
 exports.updateproductpost=(req,res)=>{
+  if(req.session.role=="admin"){
   if(req.file){
     var id=req.body.id;
     var pname=req.body.prodname;
@@ -286,6 +345,10 @@ connection.query(query,data,(err)=>{
   console.log("error in update");
   }
 })
+  }
+  else{
+    res.redirect('/home')
+  }
 
 };
 
@@ -372,3 +435,190 @@ exports.getproductdetail = (req, res)=>{
     }
   );
   }
+
+exports.getaccpage= (req, res) => {
+  if(req.session.role=="admin"){
+res.redirect('/admin/team/add');
+  }
+  else{
+  if(!req.session.username){
+  res.render('page/login');
+  }
+  else{
+    res.redirect('/user');
+  }
+}
+};
+
+exports.login= (req, res) => {
+  var pname=req.body.forloginname;
+  var ppass=req.body.forloginpassword;
+    var addingdataquery=`SELECT * FROM account WHERE username='${pname}'`;
+    connection.query(addingdataquery,(err,row)=>{
+      if (err) throw err;
+      if(row.length && bcrypt.compareSync(ppass,row[0].password)){
+      if(row[0].role=="admin"){
+        req.session.username=pname;
+        req.session.role="admin";
+        res.redirect('/admin/team')
+        console.log(req.session);
+      }
+      else {
+        req.session.username=pname;
+        req.session.role=row[0].role;
+      console.log(req.session);
+      res.redirect('/user')
+      }
+    }
+      else{
+        console.log("data not present")
+        res.redirect('/account');
+      }
+    })
+  }
+
+
+exports.register=async(req, res) => {
+       var  hashedpassword=await  bcrypt.hash(req.body.passwordregister,10);
+      const registerusername=req.body.usernameregister;
+      const registeremail=req.body.emailregister;
+      var checkquery=`Select * from account where username='${registerusername}'`;
+      connection.query(checkquery,(err,row)=>{
+        if(err) throw err
+        if(row.length>0){
+          console.log("try different username");
+          res.redirect('/account')
+        }
+        else{
+          var addingdataquery=`INSERT INTO account(username,password,email,role) VALUES ('${registerusername}','${hashedpassword}','${registeremail}','user')`;
+          connection.query(addingdataquery,(err)=>{
+            if (err) throw err;
+            res.redirect("/account");
+          })
+        }
+      })
+    
+    }
+// res.render("page/home")
+// console.log(pname + "" +bname);
+
+//for login page after successfull authentication
+exports.loggedin= (req, res) => {
+  if(req.session.role=="admin"){
+    res.redirect('admin/team/add')
+  }
+  else{
+  if(!req.session.username){
+    res.redirect('/account')
+  }
+else{
+  console.log(req.session);
+res.render('page/userloggedin',{data:req.session.username})
+}
+  }
+};
+
+//for login page after successfull authentication
+exports.signout= (req, res) => {
+  if(req.session.role=="admin"){
+    res.redirect('/admin/team/add')
+  }
+  else{
+  if(!req.session.username){
+    res.redirect('/account')
+  }
+else{
+  console.log("this session destroyed",req.session.username," ",req.session.role)
+  req.session.destroy();
+  res.redirect('/account')
+  console.log("successfully logged out");
+}
+  }
+};
+
+exports.adminsignout= (req, res) => {
+  if((!(req.session.role=="admin")) ||(!req.session.username)){
+    res.redirect('/account')
+  }
+else{  
+  console.log("this session destroyed",req.session.username," ",req.session.role)
+  req.session.destroy();
+  res.redirect('/account')
+  console.log("successfully logged out");
+}
+};
+
+
+exports.getuseradmin = (req, res)=>{
+  if(req.session.role=="admin"){
+  var query="select * from account";
+  connection.query(query,(err,row,fields)=>{
+    if (err) throw err;
+    res.render('page/ourusers',{action:'list',data:row});
+  })
+}
+else{
+  res.redirect('/home')
+}
+  }
+
+//showing users data in form
+exports.updateuser = (req, res) => {
+  if(req.session.role=="admin"){
+  var id=req.query.id;
+  var tempquery="SELECT * FROM `account` WHERE `username` = ?";
+  connection.query(tempquery,[id],(err, row) => {
+      if (!err) {
+        res.render("page/ouruserupdate",{data:row})
+      } else console.log(err);
+    }
+  );
+  }
+  else{
+    res.redirect('/home')
+  }
+};
+
+//updating product data in form
+exports.updateuserpost=(req,res)=>{
+  if(req.session.role=="admin"){
+    var id=req.body.userid;
+    var role=req.body.userrole;
+var query=`update account set role='${role}' where username='${id}'`;
+connection.query(query,(err)=>{
+  if(!err){
+    res.redirect("/admin/user");
+  }
+  else{
+  console.log("error in update");
+  }
+})
+  }
+  else{
+    res.redirect('/home')
+  }
+
+};
+//del user data
+exports.deluser = (req, res) => {
+  if(req.session.role=="admin"){
+    var check=req.params.id;
+    if(req.params.id=="admin"){
+      console.log("owner cannot be deleted");
+      res.redirect('/admin/user')
+    }
+    else{
+  var tempquery=`DELETE FROM account WHERE username ='${check}' `;
+  connection.query(tempquery,(err, row, fields) => {
+      if (!err) {
+          res.redirect("/admin/user");
+      } else console.log(err);
+    });
+  }
+}
+  else{
+    res.redirect('/home')
+  }
+
+}
+
