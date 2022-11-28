@@ -1,10 +1,4 @@
-const express=require('express')
-const bcrypt = require("bcrypt") 
-var flash = require('connect-flash');
-var session = require('express-session')
-const app=express()
-const path=require("path")
-const bodyparser=require('body-parser');
+er');
 const port=3000
 app.set('view engine', 'ejs');
 const Routes = require("./routes/routing");
