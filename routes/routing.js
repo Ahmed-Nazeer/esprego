@@ -1,10 +1,5 @@
 const express=require('express')
-const path=require("path")
-const mysql = require('mysql'); 
-const bodyparser=require('body-parser');
-const multer = require("multer");
-const storage = multer.diskStorage({
-  destination: function (req, file, callback) {
+{
     callback(null, "./views/images");
   },
   filename: function (req, file, callback) {
