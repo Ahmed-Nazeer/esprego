@@ -1,9 +1,4 @@
-const mysql = require('mysql'); 
-const bcrypt = require("bcrypt") 
-const bodyparser=require('body-parser');
-const pdf =require("html-pdf");
-const fs=require("fs");
-const { request } = require('http');
+
 const e = require('connect-flash');
 const session = require('express-session');
 //data base connection
