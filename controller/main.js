@@ -6,6 +6,7 @@ const fs=require("fs");
 const { request } = require('http');
 const e = require('connect-flash');
 const session = require('express-session');
+//nice work man
 //data base connection
 var connection=mysql.createConnection({
 host:'localhost',
@@ -137,7 +138,7 @@ exports.getteamadmin = (req, res)=>{
   })
 }
 else{
-  res.redirect('/home')
+  res.redirect('/home')jhkjhj
 }
 
 }
