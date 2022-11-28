@@ -1,14 +1,5 @@
 {
-  "name": "coffee",
-  "version": "1.0.0",
-  "description": "",
-  "main": "controller.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon controller.js"
-  },
-  "keywords": [],
-  "author": "",
+
   "license": "ISC",
   "dependencies": {
     "ajax": "^0.0.4",
