@@ -1,387 +1,301 @@
-const mysql = require('mysql'); 
-const bcrypt = require("bcrypt") 
-const bodyparser=require('body-parser');
-const pdf =require("html-pdf");
-const fs=require("fs");
-const { request } = require('http');
-const e = require('connect-flash');
-const session = require('express-session');
-//nice work man
-//data base connection
-var connection=mysql.createConnection({
-host:'localhost',
-user:'root',
-password:'',
-database:'webproject'
-});
-//connection checker
-connection.connect(function (err){
-    if (err) throw err;
-    console.log('connected');
-  })
+const connection = require("../config/database");
+const transporter = require("../config/mailer");
+const bcrypt = require("bcrypt");
+// const pdf = require("html-pdf");
+// const fs = require("fs");
+var valid = require("validator");
+const e = require("connect-flash");
+// const { hash } = require("bcrypt");
+// const path=require('path')
+
+//for home page
 exports.servehome = (req, res) => {
-      res.render("../views/page/home")
-  };
-  exports.servecontactus = (req, res) => {
-    res.render("../views/page/contact")
-};
-exports.serveaboutus = (req, res) => {
-    res.render("../views/page/about")
+  res.render("../views/page/home");
 };
 
-//getting all customers
-exports.getcustomer = (req, res) => {
-    var query="select * from customer";
-    connection.query(query,(err,row,fields)=>{
-      if (err) throw err;
-      res.render('page/index',{title:'Record', action:'list',data:row});
-    })
-};
 
-//displaying teams page
-exports.getteam = (req, res)=>{
-    const resultsPerPage = 9;
-  let sql = 'SELECT * FROM teamdetails';
-  connection.query(sql, (err, result) => {
-      if(err) throw err;
-      const numOfResults = result.length;
-      const numberOfPages = Math.ceil(numOfResults / resultsPerPage);
-      let page = req.query.page ? Number(req.query.page) : 1;
-      if(page > numberOfPages){
-          res.redirect('/?page='+encodeURIComponent(numberOfPages));
-      }
-      //Determine the SQL LIMIT starting number
-      const startingLimit = (page - 1) * resultsPerPage;
-      //Get the relevant number of POSTS for this starting page
-      sql = `SELECT * FROM teamdetails LIMIT ${startingLimit},${resultsPerPage}`;
-      connection.query(sql, (err, result)=>{
-          if(err) throw err;
-          let iterator = (page - 1) < 1 ? 1 : page - 1;
-          let endingLink = (iterator + 3) <= numberOfPages ? (iterator + 3) : page + (numberOfPages - page);
-          if(endingLink < (page + 0)){
-              iterator -= (page + 0) - numberOfPages;
-          }
-          res.render('page/ourteam', {data: result, page, iterator, endingLink, numberOfPages});
-      });
-  });
+exports.contactadmin = (req, res) => {
+  if (req.session.role == "admin") {
+  var query=`Select * from contactus`;
+  connection.query(query,(err,result)=>{
+    if(err) throw err;
+    else{
+      res.render("../views/page/admin_contact",{data:result});
     }
-
-//displaying teams after search
-exports.getsearchteam = (req, res)=>{
-  it=0;
-    var min=0;
-    var year=req.query.year;
-    var sname=req.query.sname;
-    var sql=`SELECT * FROM teamdetails where  workerfname LIKE '%${sname}%' and workerexperience BETWEEN '${min}' and '${year}'`;
-    connection.query(sql,(err,result)=>{
-      if (err) throw err
-      if( result.length > 0){
-        res.render('page/oursearchteam',{data:result,it})
-      }
-      it=100;
- res.render('page/oursearchteam',{data:result,it})
-    }) 
-}
-
-
-//displaying form for adding new team member
-exports.teamadd= (req, res) => {
-  if(req.session.role=="admin"){
-      res.render('page/addteam');
-  }
-  else{
-    res.redirect('/home');
-  }
-};
-
-
-
-//adding new team member
-exports.addteam = (req, res) => {
-    // if (!req.file) {
-    //     console.log("No file received");
-    //     return res.send({
-    //       success: false,
-    //     });
-    //   } else {
-    //     console.log("file received");
-    //   }
-    if(req.session.role=="admin"){
-    var fname=req.body.firstname;
-      var lname=req.body.lastname;
-      var email1=req.body.email;
-      var cnic1=req.body.cnic;
-      var pos1=req.body.pos;
-      var deg=req.body.deg;
-      var phn=req.body.phn;
-      var exp=req.body.exp;
-      var level=req.body.level;
-      var desc=req.body.desc;
-      var fax=req.body.fax;
-      var img=req.file.originalname;
-        var addingdataquery="INSERT INTO teamdetails(workerfname,wrokerlname,workerpos,email,cnic,imgpath,workerdegree,workerphone,workerexperience,workercareerlevel,workerdesc,workerfax) VALUES ('"+fname+"','"+lname+"','"+pos1+"','"+email1+"','"+cnic1+"','"+img+"','"+deg+"','"+phn+"','"+exp+"','"+level+"','"+desc+"','"+fax+"')";
-        connection.query(addingdataquery,(err)=>{
-          if (err) throw err;
-          res.redirect("/admin/team");
-        })
-      }
-      else{
-        res.redirect('/home')
-      }
-};
-exports.getteamadmin = (req, res)=>{
-  if(req.session.role=="admin"){
-  var query="select * from teamdetails";
-  connection.query(query,(err,row,fields)=>{
-    if (err) throw err;
-    res.render('page/adminteam',{action:'list',data:row});
-  })
-}
-else{
-  res.redirect('/home')jhkjhj
-}
-
-}
-//   //displaying form to update  team member
-// exports.teamadd= (req, res) => {
-//   res.render('page/updateteam');
-// };
-
-//showing team member data in form
-exports.updateteam = (req, res) => {
-  if(req.session.role=="admin"){
-  var id=req.query.id;
-  var tempquery="SELECT * FROM `teamdetails` WHERE `workerid` = ?";
-  connection.query(tempquery,[id],(err, row) => {
-      if (!err) {
-        res.render("page/updateteam",{data:row})
-      } else console.log(err);
-    }
-  );
-  }
-  else{
-    res.redirect('/home')
-  }
-};
-
-//updating team member data in form
-exports.updateteampost=(req,res)=>{
-  if(req.session.role=="admin"){
-
-  if(req.file){
-    var fname=req.body.firstname;
-var lname=req.body.lastname;
-var email=req.body.email;
-var cnic=req.body.cnic;
-var pos=req.body.pos;
-var img=req.file.originalname;
-var idd=req.body.updateid;
-var deg=req.body.deg;
-var phn=req.body.phn;
-var exp=req.body.exp;
-var level=req.body.level;
-var desc=req.body.desc;
-var fax=req.body.fax;
-var query="update teamdetails set workerfname=?,wrokerlname=?,email=?,cnic=?,workerpos=?,imgpath=?,workerdegree=?,workerphone=?,workerexperience=?,workercareerlevel=?,workerdesc=?,workerfax=? where workerid=?";
-var data=[fname,lname,email,cnic,pos,img,deg,phn,exp,level,desc,fax,idd];
-  }
-  else{
-var fname=req.body.firstname;
-var lname=req.body.lastname;
-var email=req.body.email;
-var cnic=req.body.cnic;
-var pos=req.body.pos;
-var idd=req.body.updateid;
-var deg=req.body.deg;
-var phn=req.body.phn;
-var exp=req.body.exp;
-var level=req.body.level;
-var desc=req.body.desc;
-var fax=req.body.fax;
-var query="update teamdetails set workerfname=?,wrokerlname=?,email=?,cnic=?,workerpos=?,workerdegree=?,workerphone=?,workerexperience=?,workercareerlevel=?,workerdesc=?,workerfax=? where workerid=?";
-var data=[fname,lname,email,cnic,pos,deg,phn,exp,level,desc,fax,idd];
-  }
-
-connection.query(query,data,(err)=>{
-  if(!err){
-    res.redirect("/admin/team");
-  }
-  console.log("error in update");
-})
-  }
-  else{
-    res.redirect('/home')
-  }
-
-};
-
-
-//del team member data
-exports.delteam = (req, res) => {
-  if(req.session.role=="admin"){
-  var tempquery="DELETE FROM `teamdetails` WHERE `workerid` = " + req.params.id;
-  connection.query(tempquery,(err, row, fields) => {
-      if (!err) {
-          res.redirect("/admin/team");
-      } else console.log(err);
-    }
-  );
-  }
-  else{
-    res.redirect('/home')
-  }
-};
-
-exports.getproductadmin = (req, res)=>{
-  if(req.session.role=="admin"){
-  var query="select * from productdetails";
-  connection.query(query,(err,row,fields)=>{
-    if (err) throw err;
-    res.render('page/adminproduct',{action:'list',data:row});
   })
 }
 else{
   res.redirect('/home')
+} 
+};
+
+
+
+// for contact form
+exports.contactus = (req, res) => {
+    var nname=req.body.contactname;
+    var ename=req.body.contactemail;
+    var mname=req.body.contactmessage;
+    if (valid.isEmail(ename)) {
+          const mailOptions = {
+            from: "esprego.coffe@gmail.com",
+            to: ename,
+            subject: "Contact",
+            text: `Please do not reply to this email as it will not be received.This is to let you know that we have received your email and one of our representative will contact you soon.`,
+          };
+          transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+              console.log(error);
+            } else {
+              console.log("Email sent: " + info.response);
+              var querycontact=`insert into contactus(name,email,message) values ('${nname}','${ename}','${mname}')`;
+              connection.query(querycontact,(err)=>{
+                if(err) throw err;
+                else{
+                  console.log('response submitted successfully');
+                  res.redirect('/home');
+                }
+              })
+            }
+          });
+        }
+        else{
+          console.log('invalid email')
+        }
+
+};
+
+
+exports.customer_admin=(req,res)=>{
+  if (req.session.role == "admin") {
+    var id = req.query.id;
+    var tempquery = "SELECT * FROM `contactus` WHERE `id` = ?";
+    connection.query(tempquery, [id], (err, row) => {
+      if (!err) {
+        res.render("page/customer_support", { data: row });
+      } else console.log(err);
+    });
+  } else {
+    res.redirect("/home");
+  }
 }
-  }
 
-  //del product data
-exports.delproduct = (req, res) => {
-  if(req.session.role=="admin"){
-  var tempquery="DELETE FROM `productdetails` WHERE `prodid` = " + req.params.id;
-  connection.query(tempquery,(err, row, fields) => {
+
+
+exports.customer_admin_post=(req,res)=>{
+  if (req.session.role == "admin") {
+    var admin_useri=req.body.admin_userid;
+    var admin_messag=req.body.admin_message;
+    var admin_mail=req.body.admin_email;
+    console.log(admin_mail,admin_messag,admin_useri);
+          const mailOptions = {
+            from: "esprego.coffe@gmail.com",
+            to: admin_mail,
+            subject: "Addressing Your Query",
+            text: `${admin_messag}`,
+          };
+          transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+              console.log(error);
+            } else {
+              console.log("Email sent: " + info.response);
+              var query=`DELETE FROM contactus where id='${admin_useri}'`;
+              connection.query(query,(err)=>{
+                if(err) throw err;
+                else{
+                  console.log('data deleted sucessfully');
+                  res.redirect('/contactadmin');
+                }
+              })
+            }
+          });
+  } 
+  else {
+    res.redirect("/home");
+  }
+}
+
+
+exports.updateloguser = (req, res) => {
+  if (req.session.role == "user") {
+         var query=`select * from account where username='${req.session.username}'`;
+         connection.query(query,(err,result)=>{
+          if (err) throw err
+          else{
+            res.render('page/detailupdate',{data:result});
+          }
+         })
+  } else {
+    res.redirect("/home");
+  }
+};
+
+exports.userdash = (req, res) => {
+  if (req.session.role == "user") {
+   res.render('page/userdash',{data:req.session.username})
+  } else {
+    res.redirect("/home");
+  }
+};
+
+
+ exports.updateuserpost = (req, res) => {
+  if (req.session.role == "user") {
+    if (req.file) {
+      // var username = req.body.firstname;
+      var email = req.body.email;
+      var fname = req.body.firstname;
+      var lname = req.body.lastname;
+      var addr = req.body.address;
+      var img = req.file.originalname;;
+      var idd = req.body.id;
+      var query =
+        "update account set email=?,imgpath=?,firstname=?,lastname=?,address=? where username=?";
+      var data = [
+        email,
+        img,
+        fname,
+        lname,
+        addr,
+        idd,
+      ];
+    } else {
+      var email = req.body.email;
+      var fname = req.body.firstname;
+      var lname = req.body.lastname;
+      var addr = req.body.address;
+      var idd = req.body.id;
+        // var username = req.body.firstname;
+        var query =
+        "update account set email=?,firstname=?,lastname=?,address=? where username=?";
+      var data = [
+        email,
+        fname,
+        lname,
+        addr,
+        idd,
+      ];
+    }
+    connection.query(query, data, (err) => {
       if (!err) {
-          res.redirect("/admin/product");
-      } else console.log(err);
-    }
-  );
-  }
-  else{
-    res.redirect('/home')
-  }
-};
-
-//displaying form for adding new product
-exports.productadd= (req, res) => {
-  if(req.session.role=="admin"){
-
-  res.render('page/addproduct');
-  }
-  else{
-    res.redirect('/home')
+        res.redirect("/user_account");
+      }
+      console.log("error in update");
+    });
+  } else {
+    res.redirect("/home");
   }
 };
 
-//adding new product
-exports.addproduct= (req, res) => {
-  if(req.session.role=="admin"){
-  var pname=req.body.prodname;
-    var bname=req.body.brandname;
-    var quan=req.body.quantity;
-    var desc=req.body.desc;
-    var price=req.body.price;
-    var wrant=req.body.wrant;
-    var img=req.file.originalname;
-      var addingdataquery="INSERT INTO productdetails(prodname,prodbrandname,prodinstock,proddesc,prodimg,prodprice,prodwrant) VALUES ('"+pname+"','"+bname+"','"+quan+"','"+desc+"','"+img+"','"+price+"','"+wrant+"')";
-      connection.query(addingdataquery,(err)=>{
-        if (err) throw err;
-        res.redirect("/admin/product");
-      })
-    }
-    else{
-      res.redirect('/home')
-    }
+
+
+
+
+//for about us page
+exports.serveaboutus = (req, res) => {
+  res.render("../views/page/about");
 };
 
+// //getting all customers
+// exports.getcustomer = (req, res) => {
+//   var query = "select * from customer";
+//   connection.query(query, (err, row, fields) => {
+//     if (err) throw err;
+//     res.render("page/index", { title: "Record", action: "list", data: row });
+//   });
+// };
 
-//showing product data in form
-exports.updateproduct = (req, res) => {
-  if(req.session.role=="admin"){
-  var id=req.query.id;
-  var tempquery="SELECT * FROM `productdetails` WHERE `prodid` = ?";
-  connection.query(tempquery,[id],(err, row) => {
-      if (!err) {
-        res.render("page/updateproduct",{data:row})
-      } else console.log(err);
+//displaying teams page
+exports.getteam = (req, res) => {
+  const resultsPerPage = 9;
+  let sql = "SELECT * FROM teamdetails";
+  connection.query(sql, (err, result) => {
+    if (err) throw err;
+    const numOfResults = result.length;
+    const numberOfPages = Math.ceil(numOfResults / resultsPerPage);
+    let page = req.query.page ? Number(req.query.page) : 1;
+    if (page > numberOfPages) {
+      res.redirect("/?page=" + encodeURIComponent(numberOfPages));
     }
-  );
-  }
-  else{
-    res.redirect('/home')
-  }
+    //Determine the SQL LIMIT starting number
+    const startingLimit = (page - 1) * resultsPerPage;
+    //Get the relevant number of POSTS for this starting page
+    sql = `SELECT * FROM teamdetails LIMIT ${startingLimit},${resultsPerPage}`;
+    connection.query(sql, (err, result) => {
+      if (err) throw err;
+      let iterator = page - 1 < 1 ? 1 : page - 1;
+      let endingLink =
+        iterator + 3 <= numberOfPages
+          ? iterator + 3
+          : page + (numberOfPages - page);
+      if (endingLink < page + 0) {
+        iterator -= page + 0 - numberOfPages;
+      }
+      res.render("page/ourteam", {
+        data: result,
+        page,
+        iterator,
+        endingLink,
+        numberOfPages,
+      });
+    });
+  });
 };
 
-//updating product data in form
-exports.updateproductpost=(req,res)=>{
-  if(req.session.role=="admin"){
-  if(req.file){
-    var id=req.body.id;
-    var pname=req.body.prodname;
-    var bname=req.body.brandname;
-    var quan=req.body.quantity;
-    var desc=req.body.desc;
-    var price=req.body.price;
-    var wrant=req.body.wrant;
-    var img=req.file.originalname;
-var query="update productdetails set prodname=?,prodbrandname=?,prodinstock=?,proddesc=?,prodimg=?,prodprice=?,prodwrant=? where prodid=?";
-var data=[pname,bname,quan,desc,img,price,wrant,id];
-  }
-  else{
-    var id=req.body.id;
-    var pname=req.body.prodname;
-    var bname=req.body.brandname;
-    var quan=req.body.quantity;
-    var desc=req.body.desc;
-    var price=req.body.price;
-    var wrant=req.body.wrant;
-var query="update productdetails set prodname=?,prodbrandname=?,prodinstock=?,proddesc=?,prodprice=?,prodwrant=? where prodid=?";
-var data=[pname,bname,quan,desc,price,wrant,id];
-  }
-
-connection.query(query,data,(err)=>{
-  if(!err){
-    res.redirect("/admin/product");
-  }
-  else{
-  console.log("error in update");
-  }
-})
-  }
-  else{
-    res.redirect('/home')
-  }
-
+//displaying teams after search
+exports.getsearchteam = (req, res) => {
+  it = 0;
+  var min = 0;
+  var year = req.query.year;
+  var sname = req.query.sname;
+  var sql = `SELECT * FROM teamdetails where  workerfname LIKE '%${sname}%' and workerexperience BETWEEN '${min}' and '${year}'`;
+  connection.query(sql, (err, result) => {
+    if (err) throw err;
+    if (result.length > 0) {
+      res.render("page/oursearchteam", { data: result, it });
+    }
+    it = 100;
+    res.render("page/oursearchteam", { data: result, it });
+  });
 };
 
 //displaying product page
-exports.getproduct = (req, res)=>{
+exports.getproduct = (req, res) => {
   const resultsPerPage = 9;
-  let sql = 'SELECT * FROM productdetails';
+  let sql = "SELECT * FROM productdetails";
   connection.query(sql, (err, result) => {
-      if(err) throw err;
-      const numOfResults = result.length;
-      const numberOfPages = Math.ceil(numOfResults / resultsPerPage);
-      let page = req.query.page ? Number(req.query.page) : 1;
-      if(page > numberOfPages){
-          res.redirect('/?page='+encodeURIComponent(numberOfPages));
+    if (err) throw err;
+    const numOfResults = result.length;
+    const numberOfPages = Math.ceil(numOfResults / resultsPerPage);
+    let page = req.query.page ? Number(req.query.page) : 1;
+    if (page > numberOfPages) {
+      res.redirect("/?page=" + encodeURIComponent(numberOfPages));
+    }
+    //Determine the SQL LIMIT starting number
+    const startingLimit = (page - 1) * resultsPerPage;
+    //Get the relevant number of POSTS for this starting page
+    sql = `SELECT * FROM productdetails LIMIT ${startingLimit},${resultsPerPage}`;
+    connection.query(sql, (err, result) => {
+      if (err) throw err;
+      let iterator = page - 1 < 1 ? 1 : page - 1;
+      let endingLink =
+        iterator + 3 <= numberOfPages
+          ? iterator + 3
+          : page + (numberOfPages - page);
+      if (endingLink < page + 0) {
+        iterator -= page + 0 - numberOfPages;
       }
-      //Determine the SQL LIMIT starting number
-      const startingLimit = (page - 1) * resultsPerPage;
-      //Get the relevant number of POSTS for this starting page
-      sql = `SELECT * FROM productdetails LIMIT ${startingLimit},${resultsPerPage}`;
-      connection.query(sql, (err, result)=>{
-          if(err) throw err;
-          let iterator = (page - 1) < 1 ? 1 : page - 1;
-          let endingLink = (iterator + 3) <= numberOfPages ? (iterator + 3) : page + (numberOfPages - page);
-          if(endingLink < (page + 0)){
-              iterator -= (page + 0) - numberOfPages;
-          }
-      
-          res.render('page/ourproduct', {data: result, page, iterator, endingLink, numberOfPages});
+
+      res.render("page/ourproduct", {
+        data: result,
+        page,
+        iterator,
+        endingLink,
+        numberOfPages,
       });
+    });
   });
-    
-  }
+};
 
 //   displaying teams after search
 // exports.searchproduct = (req, res)=>{
@@ -398,228 +312,194 @@ exports.getproduct = (req, res)=>{
 //     })
 // }
 
-exports.filterproduct = (req, res)=>{
-  it=0;
-    var min=req.query.min;
-    var max=req.query.max;
-    var pname=req.query.pname;
-    console.log(min,max);
-    var sql=`SELECT * FROM productdetails where  prodname LIKE '%${pname}%' and prodprice BETWEEN '${min}' and '${max}'`;
-    connection.query(sql,(err,result)=>{
-      if (err) throw err
-      if( result.length > 0){
-        res.render('page/oursearchproduct',{data:result,it})
-      }
-      it=100;
- res.render('page/oursearchproduct',{data:result,it})
-    })
-}
-
-
-exports.getteamdetail = (req, res)=>{
-  var tempquery="SELECT  * FROM `teamdetails` WHERE `workerid` = " + req.params.id;
-  connection.query(tempquery,(err, row, fields) => {
-      if (!err) {
-          res.render("page/memberdetails",{data:row});
-      } else console.log(err);
+exports.filterproduct = (req, res) => {
+  it = 0;
+  var min = req.query.min;
+  var max = req.query.max;
+  var pname = req.query.pname;
+  console.log(min, max);
+  var sql = `SELECT * FROM productdetails where  prodname LIKE '%${pname}%' and prodprice BETWEEN '${min}' and '${max}'`;
+  connection.query(sql, (err, result) => {
+    if (err) throw err;
+    if (result.length > 0) {
+      res.render("page/oursearchproduct", { data: result, it });
     }
-  );
-  }
-
-
-exports.getproductdetail = (req, res)=>{
-  var tempquery="SELECT  * FROM `productdetails` WHERE `prodid` = " + req.params.id;
-  connection.query(tempquery,(err, row, fields) => {
-      if (!err) {
-          res.render("page/productdetails",{data:row});
-      } else console.log(err);
-    }
-  );
-  }
-
-exports.getaccpage= (req, res) => {
-  if(req.session.role=="admin"){
-res.redirect('/admin/team/add');
-  }
-  else{
-  if(!req.session.username){
-  res.render('page/login');
-  }
-  else{
-    res.redirect('/user');
-  }
-}
+    it = 100;
+    res.render("page/oursearchproduct", { data: result, it });
+  });
 };
 
-exports.login= (req, res) => {
-  var pname=req.body.forloginname;
-  var ppass=req.body.forloginpassword;
-    var addingdataquery=`SELECT * FROM account WHERE username='${pname}'`;
-    connection.query(addingdataquery,(err,row)=>{
-      if (err) throw err;
-      if(row.length && bcrypt.compareSync(ppass,row[0].password)){
-      if(row[0].role=="admin"){
-        req.session.username=pname;
-        req.session.role="admin";
-        res.redirect('/admin/team')
-        console.log(req.session);
-      }
-      else {
-        req.session.username=pname;
-        req.session.role=row[0].role;
-      console.log(req.session);
-      res.redirect('/user')
-      }
-    }
-      else{
-        console.log("data not present")
-        res.redirect('/account');
-      }
-    })
-  }
+exports.getteamdetail = (req, res) => {
+  var tempquery =
+    "SELECT  * FROM `teamdetails` WHERE `workerid` = " + req.params.id;
+  connection.query(tempquery, (err, row, fields) => {
+    if (!err) {
+      res.render("page/memberdetails", { data: row });
+    } else console.log(err);
+  });
+};
 
-
-exports.register=async(req, res) => {
-       var  hashedpassword=await  bcrypt.hash(req.body.passwordregister,10);
-      const registerusername=req.body.usernameregister;
-      const registeremail=req.body.emailregister;
-      var checkquery=`Select * from account where username='${registerusername}'`;
-      connection.query(checkquery,(err,row)=>{
+exports.getproductdetail = (req, res) => {
+  var tempquery =
+    "SELECT  * FROM `productdetails` WHERE `prodid` = " + req.params.id;
+  connection.query(tempquery, (err, row, fields) => {
+    if (!err) {
+      var query=`select * from review where prodid='${req.params.id}'`;
+      connection.query(query,(err,resu)=>{
         if(err) throw err
-        if(row.length>0){
-          console.log("try different username");
-          res.redirect('/account')
-        }
         else{
-          var addingdataquery=`INSERT INTO account(username,password,email,role) VALUES ('${registerusername}','${hashedpassword}','${registeremail}','user')`;
-          connection.query(addingdataquery,(err)=>{
-            if (err) throw err;
-            res.redirect("/account");
-          })
+          var query2=`select * from comment where prodid='${req.params.id}'`;
+          connection.query(query2,(err,results)=>{
+            if(err) throw err
+            else{
+          if((req.session.role=="user")){
+          res.render("page/productdetails", { data: row ,rev:resu,temp:1,user:req.session.username,comment:results});
+          }
+          else{
+            res.render("page/productdetails", { data: row ,rev:resu,temp:0,user:null,comment:results});
+          }
+        }
+        })
         }
       })
-    
+     
+    } else console.log(err);
+  });
+};
+
+exports.getaccpage = (req, res) => {
+  if (req.session.role == "admin") {
+    res.redirect("/admin/team/add");
+  } else if(req.session.role=="user"){
+    res.redirect("/userdash");
+  }
+  else{
+    if (!req.session.username) {
+      res.render("page/login");
+    } else {
+      res.redirect("/home");
     }
-// res.render("page/home")
-// console.log(pname + "" +bname);
-
-//for login page after successfull authentication
-exports.loggedin= (req, res) => {
-  if(req.session.role=="admin"){
-    res.redirect('admin/team/add')
   }
-  else{
-  if(!req.session.username){
-    res.redirect('/account')
-  }
-else{
-  console.log(req.session);
-res.render('page/userloggedin',{data:req.session.username})
 }
+
+
+exports.getdash = (req, res) => {
+  if (req.session.role == "admin") {
+   res.render('page/dash')
+  } else {
+    res.redirect("/home");
   }
 };
 
-//for login page after successfull authentication
-exports.signout= (req, res) => {
-  if(req.session.role=="admin"){
-    res.redirect('/admin/team/add')
-  }
-  else{
-  if(!req.session.username){
-    res.redirect('/account')
-  }
-else{
-  console.log("this session destroyed",req.session.username," ",req.session.role)
-  req.session.destroy();
-  res.redirect('/account')
-  console.log("successfully logged out");
-}
-  }
+exports.changeuserpass = (req, res) => {
+     if(req.session.role=="user"){
+        res.render('page/changeuserpass',{data:req.session.username})
+     }
+     else{
+      res.redirect('/home')
+     }
 };
-
-exports.adminsignout= (req, res) => {
-  if((!(req.session.role=="admin")) ||(!req.session.username)){
-    res.redirect('/account')
-  }
-else{  
-  console.log("this session destroyed",req.session.username," ",req.session.role)
-  req.session.destroy();
-  res.redirect('/account')
-  console.log("successfully logged out");
-}
-};
-
-
-exports.getuseradmin = (req, res)=>{
-  if(req.session.role=="admin"){
-  var query="select * from account";
-  connection.query(query,(err,row,fields)=>{
+exports.changeuserpasspost = async(req, res) => {
+  var pold = req.body.oldp;
+  var pnew = req.body.newp;
+  var hashedpassword = await bcrypt.hash(pnew, 10);
+  var id = req.body.id;
+  var query=`update account set password='${hashedpassword}' where username='${id}'`;
+  var addingdataquery = `SELECT * FROM account WHERE username='${id}'`;
+  connection.query(addingdataquery, (err, row) => {
     if (err) throw err;
-    res.render('page/ourusers',{action:'list',data:row});
-  })
-}
-else{
-  res.redirect('/home')
-}
-  }
-
-//showing users data in form
-exports.updateuser = (req, res) => {
-  if(req.session.role=="admin"){
-  var id=req.query.id;
-  var tempquery="SELECT * FROM `account` WHERE `username` = ?";
-  connection.query(tempquery,[id],(err, row) => {
-      if (!err) {
-        res.render("page/ouruserupdate",{data:row})
-      } else console.log(err);
+    if (row.length &&  bcrypt.compareSync(pold, row[0].password)) {
+        connection.query(query,(err)=>{
+          if(err) throw err
+          else{
+            console.log('password updated successfully');
+            res.redirect('/userdash');
+          }
+        })
+        console.log('password match')
+    } 
+    else {
+      console.log("Old Password is incorrect");
+      res.render('page/changeuserpass',{data:id})
     }
-  );
+  });
+};
+
+// exports.addrev =(req, res) => {
+//  if(req.session.role=="user"){
+//   res.render('page/add_rev',{id:req.session.username,prodid:req.params.id});
+//  }
+//  else{
+//   res.redirect('/product')
+//  }
+// };
+exports.addrevpost =(req, res) => {
+  if(req.session.role=="user"){
+ var review=req.body.rev;
+ var username=req.body.username;
+ var id=req.body.prodid;
+ var star=req.body.star;
+var query1=`Insert  into review(prodid,username,review,star) values ('${id}','${username}','${review}','${star}')`;
+        connection.query(query1,(err)=>{
+          if(err) throw err
+          console.log('review added successfully')
+          res.redirect(`/productdetail/${id}`);
+        })
   }
   else{
-    res.redirect('/home')
+   res.redirect('/product')
+  }
+ };
+
+ exports.renderreply = (req, res) => {
+  if (req.session.username) {
+    var revid=req.params.id;
+    var prodid=req.params.prodid;
+    var username=req.params.username;
+   res.render('page/reply',{revid:revid,prodid:prodid,username:username})
+  } else {
+    res.redirect("/account");
   }
 };
 
-//updating product data in form
-exports.updateuserpost=(req,res)=>{
-  if(req.session.role=="admin"){
-    var id=req.body.userid;
-    var role=req.body.userrole;
-var query=`update account set role='${role}' where username='${id}'`;
-connection.query(query,(err)=>{
-  if(!err){
-    res.redirect("/admin/user");
+exports.renderreplypost = (req, res) => {
+  if (req.session.username) {
+    var revid=req.body.revid;
+    var prodid=req.body.prodid;
+    var username=req.body.username;
+    var reply=req.body.reply;
+    var query=`insert into comment (username,prodid,reply,revid) values ('${username}','${prodid}','${reply}','${revid}')`;
+    connection.query(query,(err)=>{
+      if (err) throw err;
+      else{
+        res.redirect(`/productdetail/${prodid}`)
+      }
+    })
+  } else {
+    res.redirect(`/productdetail/${prodid}`);
   }
-  else{
-  console.log("error in update");
-  }
-})
-  }
-  else{
-    res.redirect('/home')
-  }
-
 };
-//del user data
-exports.deluser = (req, res) => {
-  if(req.session.role=="admin"){
-    var check=req.params.id;
-    if(req.params.id=="admin"){
-      console.log("owner cannot be deleted");
-      res.redirect('/admin/user')
-    }
+
+
+
+
+
+
+
+
+
+
+
+// modules for testing 
+const findallcontacts=function (callback){
+exports.contactadmin = (req, res) => {
+  var query=`Select * from contactus`;
+  connection.query(query,(err,result)=>{
+    if(err) throw err;
     else{
-  var tempquery=`DELETE FROM account WHERE username ='${check}' `;
-  connection.query(tempquery,(err, row, fields) => {
-      if (!err) {
-          res.redirect("/admin/user");
-      } else console.log(err);
-    });
-  }
+      callback(result)
+    }
+  }) 
+};
 }
-  else{
-    res.redirect('/home')
-  }
-
-}
-
+module.exports={findallcontacts};
